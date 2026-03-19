@@ -1,0 +1,9 @@
+.vscode
+env/
+*.python-version
+MDT/
+MDT_full/
+Ortophotos/
+tiles/
+*.tif
+*.png

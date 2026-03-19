@@ -1,0 +1,56 @@
+{
+  "ClockSpeed": 1.0,
+  "OriginGeopoint": {
+    "Latitude": 38.6058333,
+    "Longitude": -9.2119444,
+    "Altitude": 4.0
+  },
+  "RC": {
+    "RemoteControlID": -1
+  },
+  "SeeDocsAt": "https://github.com/Microsoft/AirSim/blob/main/docs/settings.md",
+  "SettingsVersion": 1.2,
+  "SimMode": "Multirotor",
+  "TimeOfDay": {
+    "Enabled": true,
+    "StartDateTime": "2025-02-12 22:00:00",
+    "CelestialClockSpeed": 1,
+    "StartDateTimeDst": false,
+    "UpdateIntervalSecs": 60
+  },
+  "Vehicles": {
+    "Drone1": {
+      "VehicleType": "SimpleFlight",
+      "AutoCreate": true,
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    }
+  },
+  "ViewMode": "Fpv",
+  "Recording": {
+    "RecordOnMove": false,
+    "RecordInterval": 0.05,
+    "Folder": "%tese%\\AirSim",
+    "Enabled": false,
+    "Cameras": [
+      {
+        "CameraName": "",
+        "ImageType": 0,
+        "PixelsAsFloat": false,
+        "VehicleName": "Drone1",
+        "Compress": true
+      }
+    ]
+  },
+  "CameraDefaults": {
+    "CaptureSettings": [
+      {
+        "ImageType": 0,
+        "Width": 800,
+        "Height": 800,
+        "FOV_Degrees": 90
+      }
+    ]
+  }
+}
