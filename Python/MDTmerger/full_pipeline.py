@@ -18,6 +18,7 @@ Pipeline Flow:
 """
 
 import io
+import time
 import os
 import math
 import subprocess
@@ -34,8 +35,8 @@ from owslib.wmts import WebMapTileService
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 1: DEM MERGING CONFIG (main.py)
 # ─────────────────────────────────────────────────────────────────────────────
-
-DEM_PATH = "MDT_resized"
+PROJECT_NAME="Zambujeira"
+DEM_PATH = "Zambujeira"
 MERGED_DEM_OUTPUT = 'merged.tif'
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -43,7 +44,7 @@ MERGED_DEM_OUTPUT = 'merged.tif'
 # ─────────────────────────────────────────────────────────────────────────────
 
 INPUT_TIF = MERGED_DEM_OUTPUT  # Use merged DEM as input
-TILES_OUTPUT_DIR = r"tiles_resized"
+TILES_OUTPUT_DIR = r"tiles"+'_'+PROJECT_NAME
 
 # Tile size — must be a valid Unreal landscape tile size:
 #   505, 1009, 2017, 4033
@@ -74,7 +75,7 @@ TILE_MATRIX_SET = "PTTM_06"
 ORTHOPHOTO_RESOLUTION = 0.5
 
 # Output files
-ORTHOPHOTO_OUTPUT_DIR ='Ortophotos'
+ORTHOPHOTO_OUTPUT_DIR ='Ortophotos'+'_'+PROJECT_NAME
 #OUTPUT_PNG = "orthophoto.png"
 #OUTPUT_GEOTIFF = "orthophoto.tif"
 
@@ -353,7 +354,7 @@ def bbox_to_tile_range(tm, ul_x, ul_y, lr_x, lr_y):
     return col_min, col_max, row_min, row_max, tile_span, res
 
 
-def fetch_tile(wmts, layer, tms_id, tm_id, row, col):
+def old_fetch_tile(wmts, layer, tms_id, tm_id, row, col):
     """Fetch a single tile from WMTS service."""
     tile = wmts.gettile(
         layer=layer,
@@ -364,6 +365,33 @@ def fetch_tile(wmts, layer, tms_id, tm_id, row, col):
         format="image/png",
     )
     return Image.open(io.BytesIO(tile.read())).convert("RGB")
+
+def fetch_tile(wmts, layer, tms_id, tm_id, row, col, retries=5):
+    for attempt in range(retries):
+        try:
+            tile = wmts.gettile(
+                layer=layer,
+                tilematrixset=tms_id,
+                tilematrix=tm_id,
+                row=row,
+                column=col,
+                format="image/png",
+            )
+
+            data = tile.read()
+
+            if not data:
+                raise ValueError("Empty tile data")
+
+            img = Image.open(io.BytesIO(data)).convert("RGB")
+            return img
+
+        except Exception as e:
+            print(f"Retry {attempt+1} for tile ({col},{row}) failed: {e}")
+            time.sleep(2 ** attempt)  # exponential backoff
+
+    print(f"❌ Tile ({col},{row}) completely failed")
+    return None
 
 
 def download_orthophoto(north, weast, east, south, output, output_geotiff):

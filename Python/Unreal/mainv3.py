@@ -11,14 +11,14 @@ gc.collect()
 
 TILE_RE = re.compile(r"(x\d+_y\d+)", re.IGNORECASE)
 MIC_DST = "/Game/Geo/MaterialsInstances"    # onde criar as material instances
-PATH=r"C:\Users\Tiago Ferreira\Documents\airsim_shoreline_localization\Python\MDTmerger\ortophotos"
+PATH=r"C:\Users\Tiago Ferreira\Documents\airsim_shoreline_localization\Python\MDTmerger\Ortophotos"
 TEXTURE_DST = "/Game/Geo/Textures"           # onde importar as texturas
 TILE_SIZE=1009
 RESOLUTION=0.5 #in meters (OF THE ORTOPHOTOS)
 TILE_SIZE_ADJUSTED=TILE_SIZE*RESOLUTION*100
 BASE_MATERIAL_INSTANCE="/Game/BASE_Inst"
 MAX_LEVELS_LOADED=50
-N=8
+N=4
 
 # ---------------- HELPERS ----------------
 def log(msg):
@@ -129,7 +129,8 @@ def all_landscape_proxies():
     actors = unreal.EditorLevelLibrary.get_all_level_actors()
     return [a for a in actors if isinstance(a, unreal.LandscapeStreamingProxy)]
 
-def round(x): return int(x%1>0.45)+int(x)
+def sgn(x): return int(abs(x)==x)*2-1
+def round(x): return int(abs(x)%1>0.45)*sgn(x)+int(x)
 
 def main():
     proxies=all_landscape_proxies()
@@ -140,8 +141,8 @@ def main():
             actor_position = proxy.get_actor_location()
             x,y=actor_position.x, actor_position.y
             #print(x/TILE_SIZE_ADJUSTED, y/TILE_SIZE_ADJUSTED)
-            real_x=round(x/TILE_SIZE_ADJUSTED)
-            real_y=round(y/TILE_SIZE_ADJUSTED)
+            real_x=round(x/TILE_SIZE_ADJUSTED)+5
+            real_y=round(y/TILE_SIZE_ADJUSTED)+4
             name="x"+str(real_x)+"_y"+str(real_y)
             #log("Proxie with "+name)
             destination=MIC_DST+"/MIC_"+name
@@ -183,9 +184,9 @@ def load_levels():
     unreal.EditorLevelLibrary.editor_invalidate_viewports()
     unreal.SystemLibrary.collect_garbage()
     gc.collect()
-    for level in levels: #This does not work is best to close manually
-        level.set_is_requesting_unload_and_removal(True)
-        level.set_editor_property("should_be_loaded", False)
+    #for level in levels: #This does not work is best to close manually
+    #    level.set_is_requesting_unload_and_removal(True)
+    #    level.set_editor_property("should_be_loaded", False)
 
     #unreal.EditorLoadingAndSavingUtils.load_map(level_path)
 
