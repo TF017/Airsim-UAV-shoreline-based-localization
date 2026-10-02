@@ -1,0 +1,506 @@
+import numpy as np
+import pickle
+import os
+
+def build_covariance_model(all_diagnostics, all_gt_positions):
+    """
+    Run this ONCE on your full dataset.
+    Fits a model: quality signals → expected position error.
+    
+    This gives you the empirical basis for your EKF covariance.
+    """
+    
+    # Collect features and targets
+    features = []
+    errors_north = []
+    errors_east = []
+    
+    for diag, gt in zip(all_diagnostics, all_gt_positions):
+        if diag is None:
+            continue
+        
+        est = diag['position']
+        
+        features.append([
+            diag['n_inliers'],
+            diag['inlier_ratio'],
+            diag['mean_reproj_error'],
+            diag['altitude_error'],
+            diag['inlier_spread'],
+            diag['baro_altitude'],  # altitude affects accuracy at 80°
+            diag['altitude_ratio'],
+            diag['inlier_spread'],
+        ])
+        
+        errors_north.append(est[0] - gt[0])
+        errors_east.append(est[1] - gt[1])
+    
+    features = np.array(features)
+    errors_north = np.array(errors_north)
+    errors_east = np.array(errors_east)
+    abs_errors = np.sqrt(errors_north**2 + errors_east**2)
+    
+    # ==========================================
+    # Analysis 1: Error vs each quality signal
+    # ==========================================
+    signal_names = [
+        'n_inliers', 'inlier_ratio', 'mean_reproj', 
+        'altitude_error', 'spread', 'altitude', 'altitude_ratio', 'inlier_spread'
+    ]
+    
+    print("=== CORRELATION WITH HORIZONTAL ERROR ===")
+    for i, name in enumerate(signal_names):
+        corr = np.corrcoef(features[:, i], abs_errors)[0, 1]
+        print(f"  {name:20s}: r = {corr:+.3f}")
+    
+    # ==========================================
+    # Analysis 2: Binned statistics
+    # ==========================================
+    print("\n=== ERROR BY INLIER COUNT ===")
+    for low, high in [(6, 20), (20, 35), (35, 50), (50, 75), (75, 200),(201, 1000)]:
+        mask = (features[:, 0] >= low) & (features[:, 0] < high)
+        if np.sum(mask) < 3:
+            continue
+        n_rmse = np.sqrt(np.mean(errors_north[mask]**2))
+        e_rmse = np.sqrt(np.mean(errors_east[mask]**2))
+        count = np.sum(mask)
+        pct = 100 * count / len(mask)
+        print(f"  [{low:3d}, {high:3d}) inliers: "
+              f"N_RMSE={n_rmse:6.1f}m, E_RMSE={e_rmse:6.1f}m "
+              f"({count} frames, {pct:.0f}%)")
+    
+    print("\n=== ERROR BY REPROJECTION ERROR ===")
+    for low, high in [(0, 2), (2, 4), (4, 6), (6, 10), (10, 50),(51, 1000)]:
+        mask = (features[:, 2] >= low) & (features[:, 2] < high)
+        if np.sum(mask) < 3:
+            continue
+        n_rmse = np.sqrt(np.mean(errors_north[mask]**2))
+        e_rmse = np.sqrt(np.mean(errors_east[mask]**2))
+        count = np.sum(mask)
+        print(f"  [{low:4.0f}, {high:4.0f}) px reproj: "
+              f"N_RMSE={n_rmse:6.1f}m, E_RMSE={e_rmse:6.1f}m "
+              f"({count} frames)")
+    
+    print("\n=== ERROR BY ALTITUDE ERROR ===")
+    for low, high in [(0, 5), (5, 15), (15, 30), (30, 60), (60, 500),(500, 1000)]:
+        mask = (features[:, 3] >= low) & (features[:, 3] < high)
+        if np.sum(mask) < 3:
+            continue
+        n_rmse = np.sqrt(np.mean(errors_north[mask]**2))
+        e_rmse = np.sqrt(np.mean(errors_east[mask]**2))
+        count = np.sum(mask)
+        print(f"  [{low:4.0f}, {high:4.0f})m alt err: "
+              f"N_RMSE={n_rmse:6.1f}m, E_RMSE={e_rmse:6.1f}m "
+              f"({count} frames)")
+    
+    print("\n=== ERROR BY DRONE ALTITUDE ===")
+    for low, high in [(20, 50), (50, 100), (100, 175), (175, 250), (250, 350)]:
+        mask = (features[:, 5] >= low) & (features[:, 5] < high)
+        if np.sum(mask) < 3:
+            continue
+        n_rmse = np.sqrt(np.mean(errors_north[mask]**2))
+        e_rmse = np.sqrt(np.mean(errors_east[mask]**2))
+        count = np.sum(mask)
+        print(f"  [{low:3.0f}, {high:3.0f})m altitude: "
+              f"N_RMSE={n_rmse:6.1f}m, E_RMSE={e_rmse:6.1f}m "
+              f"({count} frames)")
+    
+    print("\n=== ERROR BY ALTITUDE RATIO===")
+    for low, high in [(0.0, 0.02), (.02, 0.05), (0.05, 0.2), (.2, .4), (.4, 1)]:
+        mask = (features[:, 6] >= low) & (features[:, 6] < high)
+        if np.sum(mask) < 3:
+            continue
+        n_rmse = np.sqrt(np.mean(errors_north[mask]**2))
+        e_rmse = np.sqrt(np.mean(errors_east[mask]**2))
+        count = np.sum(mask)
+        print(f"  [{low:0.2f}, {high:0.2f})% altitude: "
+              f"N_RMSE={n_rmse:6.1f}m, E_RMSE={e_rmse:6.1f}m "
+              f"({count} frames)")
+        
+    
+    print("\n=== ERROR BY INLIER SPREAD===")
+    for low, high in [(0.0, 0.02), (.02, 0.05), (0.05, 0.2), (.2, .4), (.4, 1)]:
+        mask = (features[:, 7] >= low) & (features[:, 7] < high)
+        if np.sum(mask) < 3:
+            continue
+        n_rmse = np.sqrt(np.mean(errors_north[mask]**2))
+        e_rmse = np.sqrt(np.mean(errors_east[mask]**2))
+        count = np.sum(mask)
+        print(f"  [{low:0.2f}, {high:0.2f})% altitude: "
+              f"N_RMSE={n_rmse:6.1f}m, E_RMSE={e_rmse:6.1f}m "
+              f"({count} frames)")
+    
+    return features, errors_north, errors_east
+
+def cross_tabulate(all_diagnostics, all_gt_positions):
+    """
+    The key question: among GOOD fixes (50+ inliers), 
+    does drone altitude still affect accuracy?
+    
+    If YES → add altitude as a covariance factor
+    If NO  → inlier count alone is sufficient
+    """
+    
+    # Filter to 50+ inliers only
+    good_data = []
+    for diag, gt in zip(all_diagnostics, all_gt_positions):
+        if diag is None:
+            continue
+        if diag['n_inliers'] < 50:
+            continue
+
+        
+        est = diag['position']
+        error_n = est[0] - gt[0]
+        error_e = est[1] - gt[1]
+        
+        good_data.append({
+            'error_n': error_n,
+            'error_e': error_e,
+            'altitude': diag['baro_altitude'],
+            'n_inliers': diag['n_inliers'],
+            'alt_error': diag['altitude_error'],
+            'reproj': diag['mean_reproj_error'],
+            'alt_error_per': diag['altitude_ratio'],
+            'inlier_spread': diag['inlier_spread']
+        })
+    
+    df = good_data  # list of dicts
+    
+    print("=== AMONG 50+ INLIER FRAMES ONLY ===\n")
+    
+    # By altitude
+    print("Altitude effect (50+ inliers):")
+    for low, high in [(20, 75), (75, 150), (150, 250), (250, 350)]:
+        subset = [d for d in df if low <= d['altitude'] < high]
+        if len(subset) < 5:
+            continue
+        en = [d['error_n'] for d in subset]
+        ee = [d['error_e'] for d in subset]
+        print(f"  [{low:3d}, {high:3d})m: "
+              f"N_RMSE={np.sqrt(np.mean(np.array(en)**2)):6.1f}m, "
+              f"E_RMSE={np.sqrt(np.mean(np.array(ee)**2)):6.1f}m "
+              f"({len(subset)} frames)")
+    
+    # By inlier count (finer bins within 50+)
+    print("\nInlier effect (finer bins):")
+    for low, high in [(50, 65), (65, 85), (85, 120), 
+                       (120, 175), (175, 300), (300, 1000)]:
+        subset = [d for d in df if low <= d['n_inliers'] < high]
+        if len(subset) < 5:
+            continue
+        en = [d['error_n'] for d in subset]
+        ee = [d['error_e'] for d in subset]
+        print(f"  [{low:3d}, {high:3d}) inliers: "
+              f"N_RMSE={np.sqrt(np.mean(np.array(en)**2)):6.1f}m, "
+              f"E_RMSE={np.sqrt(np.mean(np.array(ee)**2)):6.1f}m "
+              f"({len(subset)} frames)")
+    
+    # By altitude error (among good fixes)
+    print("\nAltitude error effect (50+ inliers):")
+    for low, high in [(0, 3), (3, 8), (8, 15), (15, 40), (40, 200)]:
+        subset = [d for d in df if low <= d['alt_error'] < high]
+        if len(subset) < 5:
+            continue
+        en = [d['error_n'] for d in subset]
+        ee = [d['error_e'] for d in subset]
+        print(f"  [{low:3.0f}, {high:3.0f})m alt err: "
+              f"N_RMSE={np.sqrt(np.mean(np.array(en)**2)):6.1f}m, "
+              f"E_RMSE={np.sqrt(np.mean(np.array(ee)**2)):6.1f}m "
+              f"({len(subset)} frames)")
+        
+    
+    print("\nAltitude error percentage effect (50+ inliers):")
+    for low, high in [(0.0, 0.03), (0.03, 0.08), (0.08, 0.15), (0.15, 0.40), (0.40, 1.0)]:
+        subset = [d for d in df if low <= d['alt_error_per'] < high]
+        if len(subset) < 5:
+            continue
+        en = [d['error_n'] for d in subset]
+        ee = [d['error_e'] for d in subset]
+        print(f"  [{low:.2f}, {high:0.2f})m alt err: "
+              f"N_RMSE={np.sqrt(np.mean(np.array(en)**2)):6.1f}m, "
+              f"E_RMSE={np.sqrt(np.mean(np.array(ee)**2)):6.1f}m "
+              f"({len(subset)} frames)")
+    
+    print("\nAltitude error percentage & inliners effect (50+ inliers):")
+    for low, high in [(0.0, 0.03), (0.03, 0.08), (0.08, 0.15), (0.15, 0.40), (0.40, 1.0)]:
+        for _low, _high in [(50, 65), (65, 85), (85, 120), (120, 175), (175, 300), (300, 1000)]:
+            subset = [d for d in df if _low <= d['n_inliers'] < _high and low <= d['alt_error_per'] < high]
+            if len(subset) < 3:
+                continue
+            en = [d['error_n'] for d in subset]
+            ee = [d['error_e'] for d in subset]
+            print(f"  [{low:.2f}, {high:0.2f}) alt err and {_low:.2f}, {_high:0.2f}) inliners: "
+                f"N_RMSE={np.sqrt(np.mean(np.array(en)**2)):6.1f}m, "
+                f"E_RMSE={np.sqrt(np.mean(np.array(ee)**2)):6.1f}m "
+                f"({len(subset)} frames)")
+    
+    print("\nMEAN REPROJ error effect (50+ inliers):")
+    for low, high in [(0.0, 0.5), (0.5, 1), (1, 3), (3, 4), (4, 5), (5, 6), (7, 8)]:
+        subset = [d for d in df if low <= d['reproj'] < high]
+        if len(subset) < 5:
+            continue
+        en = [d['error_n'] for d in subset]
+        ee = [d['error_e'] for d in subset]
+        print(f"  [{low:.2f}, {high:0.2f}) mean reproj err: "
+              f"N_RMSE={np.sqrt(np.mean(np.array(en)**2)):6.1f}m, "
+              f"E_RMSE={np.sqrt(np.mean(np.array(ee)**2)):6.1f}m "
+              f"({len(subset)} frames)")
+    
+    
+    print("\nInliers Spread (50+ inliers):")
+    for low, high in [(0.0, 0.1), (0.1, 0.15), (0.15, 0.2), (0.2, 0.25), (0.25, 1.0)]:
+        subset = [d for d in df if low <= d['inlier_spread'] < high]
+        if len(subset) < 5:
+            continue
+        en = [d['error_n'] for d in subset]
+        ee = [d['error_e'] for d in subset]
+        print(f"  [{low:.2f}, {high:0.2f})m alt err: "
+              f"N_RMSE={np.sqrt(np.mean(np.array(en)**2)):6.1f}m, "
+              f"E_RMSE={np.sqrt(np.mean(np.array(ee)**2)):6.1f}m "
+              f"({len(subset)} frames)")
+    
+    print("\nInliers spread & # inliners effect (50+ inliers):")
+    for low, high in [(0.0, 0.1), (0.1, 0.15), (0.15, 0.2), (0.2, 0.25), (0.25, 1.0)]:
+        for _low, _high in [(50, 65), (65, 85), (85, 120), (120, 175), (175, 300), (300, 1000)]:
+            subset = [d for d in df if _low <= d['n_inliers'] < _high and low <= d['inlier_spread'] < high]
+            if len(subset) < 10:
+                continue
+            en = [d['error_n'] for d in subset]
+            ee = [d['error_e'] for d in subset]
+            print(f"  [{low:.2f}, {high:0.2f}) Spread and {_low:.2f}, {_high:0.2f}) # inliners: "
+                f"N_RMSE={np.sqrt(np.mean(np.array(en)**2)):6.1f}m, "
+                f"E_RMSE={np.sqrt(np.mean(np.array(ee)**2)):6.1f}m "
+                f"({len(subset)} frames)")
+    
+
+PATH=r'.'
+files=[file for file in os.listdir(PATH) if file.endswith('.pkl')]
+all_info=[]
+for file in files:
+    x=open(os.path.join(PATH, file), 'rb')
+    info=pickle.load(x)
+    all_info= all_info + info  #arrays.append([np.load(), file])
+    x.close()
+
+all_diag=[]
+all_gt=[]
+for diag, gt, altitude, place in all_info: 
+    all_diag.append(diag)
+    all_gt.append(gt)
+
+build_covariance_model(all_diag, all_gt)
+cross_tabulate(all_diag, all_gt)
+
+
+'''
+class CrossViewCovarianceModel:
+    """
+    Empirically calibrated from 1092 frames across
+    2 locations and 5 altitude levels.
+    
+    Primary predictor: number of PnP inliers
+    Secondary predictor: altitude error (when available)
+    """
+    
+    def __init__(self):
+        # ==========================================
+        # From your empirical data:
+        # ==========================================
+        #
+        # Inlier bin    N_RMSE   E_RMSE   Frames
+        # [50, 75)      9.9m     11.7m    43
+        # [75, 200)     6.0m     6.7m     237
+        # [200+)        2.6m     2.8m     81
+        # [35, 50)      100.8m   98.6m    26  (marginal)
+        #
+        # Minimum reject threshold: 35 inliers
+        
+        self.min_inliers = 35  # hard reject below this
+        
+        # Lookup table: (min_inliers, max_inliers) → (sigma_n, sigma_e)
+        # Sigma values set to empirical RMSE × safety factor
+        # Safety factor of 1.2-1.5 prevents overconfidence
+        self.safety_factor = 1.2#1.10
+        
+        self.inlier_table = [
+            # (min, max, sigma_n, sigma_e)
+            (35,   50,  100.8,  98.6),   # marginal
+            (50,   75,    9.9,  11.7),   # good
+            (75,  200,    6.0,   6.7),   # great
+            (200, 9999,   2.6,   2.8),   # excellent
+        ]
+        
+
+
+        self.inlier_table= [
+            (35,   50,  100.8,  98.6),   # marginal
+            (50,   65,   10.9,  14.3),   # Ok
+            ( 65,  85,    8.3,   7.9),
+            ( 85, 120,    7.1,   8.2),
+            (120, 175,    4.7,   5.6),
+            (175, 300,    2.7,   2.9),
+        ]
+    
+    def compute_R(self, diagnostics):
+        """
+        Compute 2x2 measurement covariance for EKF.
+        
+        Returns None if measurement should be rejected.
+        """
+        
+        n_inliers = diagnostics['n_inliers']
+        
+        # ==========================================
+        # Hard rejection
+        # ==========================================
+        if n_inliers < self.min_inliers:
+            return None  # reject
+        
+        # ==========================================
+        # Base covariance from inlier count
+        # ==========================================
+        sigma_n = None
+        sigma_e = None
+        
+        for min_inl, max_inl, sn, se in self.inlier_table:
+            if min_inl <= n_inliers < max_inl:
+                sigma_n = sn * self.safety_factor
+                sigma_e = se * self.safety_factor
+                break
+            
+        
+        if sigma_n is None:
+            return None
+        
+        # ==========================================
+        # Secondary adjustment: altitude error
+        # (your second strongest predictor, r=0.652)
+        # ==========================================
+        alt_err = diagnostics.get('altitude_error', None)
+        if alt_err is not None:
+            # From your data, altitude ratio > 0.20 → error doubles
+            alt_ratio = diagnostics.get('altitude_ratio', 0)
+            
+            if alt_ratio > 0.40:
+                alt_factor = 3.0
+            elif alt_ratio > 0.20:
+                alt_factor = 2.0
+            elif alt_ratio > 0.05:
+                alt_factor = 1.3
+            else:
+                alt_factor = 1.0
+            
+            sigma_n *= alt_factor
+            sigma_e *= alt_factor
+        
+        # ==========================================
+        # Build covariance matrix
+        # ==========================================
+        R = np.diag([sigma_n**2, sigma_e**2])
+        
+        return R
+    
+    def process_measurement(self, diagnostics):
+        """
+        Full processing: reject or accept with covariance.
+        Returns measurement dict for EKF or None.
+        """
+        
+        R = self.compute_R(diagnostics)
+        
+        if R is None:
+            return None
+        
+        position_ne = diagnostics['position'][0:2]
+        
+        return {
+            'position_ne': position_ne,
+            'covariance_ne': R,
+            'n_inliers': diagnostics['n_inliers'],
+            'sigma_n': np.sqrt(R[0, 0]),
+            'sigma_e': np.sqrt(R[1, 1]),
+            'quality': str(diagnostics['n_inliers']/10)
+        }
+    
+
+def validate_final_model(all_diagnostics, all_gt_positions):
+    """Quick validation of the calibrated model."""
+    
+    model = CrossViewCovarianceModel()
+    
+    normalized_n = []
+    normalized_e = []
+    quality_counts = {'rejected': 0}
+    
+    for diag, gt in zip(all_diagnostics, all_gt_positions):
+        if diag is None:
+            quality_counts['rejected'] = quality_counts.get('rejected', 0) + 1
+            continue
+        
+        meas = model.process_measurement(diag)
+        
+        if meas is None:
+            quality_counts['rejected'] = quality_counts.get('rejected', 0) + 1
+            continue
+        
+        label = meas['quality']
+        quality_counts[label] = quality_counts.get(label, 0) + 1
+        
+        error_n = diag['position'][0] - gt[0]
+        error_e = diag['position'][1] - gt[1]
+        
+        normalized_n.append(error_n / meas['sigma_n'])
+        normalized_e.append(error_e / meas['sigma_e'])
+    
+    normalized_n = np.array(normalized_n)
+    normalized_e = np.array(normalized_e)
+    
+    # ==========================================
+    # Print results
+    # ==========================================
+    
+    #print("=== MEASUREMENT BREAKDOWN ===")
+    #total = sum(quality_counts.values())
+    #for label, count in sorted(quality_counts.items()):
+        #print(f"  {label:20s}: {count:4d} ({100*count/total:.1f}%)")
+    
+    
+    print(f"\n=== NORMALIZED ERROR STATISTICS ===")
+    print(f"(Should look like standard normal: mean≈0, std≈1)\n")
+    
+    for name, ne in [("North", normalized_n), ("East", normalized_e)]:
+        w1 = 100 * np.mean(np.abs(ne) < 1.0)
+        w2 = 100 * np.mean(np.abs(ne) < 2.0)
+        w3 = 100 * np.mean(np.abs(ne) < 3.0)
+        
+        print(f"  {name}:")
+        print(f"    Mean:       {np.mean(ne):+.3f}  (expect ≈ 0)")
+        print(f"    Std:         {np.std(ne):.3f}  (expect ≈ 1)")
+        print(f"    Within 1σ:  {w1:.1f}%  (expect 68%)")
+        print(f"    Within 2σ:  {w2:.1f}%  (expect 95%)")
+        print(f"    Within 3σ:  {w3:.1f}%  (expect 99%)")
+    
+    # ==========================================
+    # Adjustment guidance
+    # ==========================================
+    overall_std = np.std(np.concatenate([normalized_n, normalized_e]))
+    
+    print(f"\n=== CALIBRATION GUIDANCE ===")
+    print(f"  Overall normalized std: {overall_std:.3f}")
+    
+    if overall_std > 1.2:
+        new_safety = model.SAFETY_FACTOR * overall_std
+        print(f"  ⚠️  OVERCONFIDENT — increase SAFETY_FACTOR "
+              f"from {model.SAFETY_FACTOR:.1f} to {new_safety:.2f}")
+    elif overall_std < 0.6:
+        new_safety = model.SAFETY_FACTOR * overall_std
+        print(f"  ⚠️  UNDERCONFIDENT — decrease SAFETY_FACTOR "
+              f"from {model.SAFETY_FACTOR:.1f} to {new_safety:.2f}")
+    else:
+        print(f"  ✅  Model is well calibrated (std in [0.6, 1.2])")
+    
+    return quality_counts, normalized_n, normalized_e
+
+validate_final_model(all_diag, all_gt)
+'''

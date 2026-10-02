@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document id="1SCXoLvBiz7xatAwG4Lh9sXz_Uh-8GTf_">
+	<name>Zambujeira_north</name>
+	<gx:CascadingStyle kml:id="__managed_style_0B5ADA4CC63E8860709C">
+		<Style>
+			<IconStyle>
+				<Icon>
+					<href>https://earth.google.com/earth/document/icon?color=1976d2&amp;id=2000&amp;scale=4</href>
+				</Icon>
+				<hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+			</IconStyle>
+			<LabelStyle>
+			</LabelStyle>
+			<LineStyle>
+				<color>ff2dc0fb</color>
+				<width>3.2</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>40ffffff</color>
+			</PolyStyle>
+			<BalloonStyle>
+			</BalloonStyle>
+		</Style>
+	</gx:CascadingStyle>
+	<gx:CascadingStyle kml:id="__managed_style_125F730C8F3E8860709C">
+		<Style>
+			<IconStyle>
+				<scale>1.2</scale>
+				<Icon>
+					<href>https://earth.google.com/earth/document/icon?color=1976d2&amp;id=2000&amp;scale=4</href>
+				</Icon>
+				<hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+			</IconStyle>
+			<LabelStyle>
+			</LabelStyle>
+			<LineStyle>
+				<color>ff2dc0fb</color>
+				<width>4.8</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>40ffffff</color>
+			</PolyStyle>
+			<BalloonStyle>
+			</BalloonStyle>
+		</Style>
+	</gx:CascadingStyle>
+	<StyleMap id="__managed_style_0ADB4203F93E8860709B">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#__managed_style_0B5ADA4CC63E8860709C</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#__managed_style_125F730C8F3E8860709C</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Placemark id="013DA198DB3E83E19554">
+		<name>37°36&apos;46.8&quot;N 8°48&apos;36.7&quot;W</name>
+		<LookAt>
+			<longitude>-8.810189000000001</longitude>
+			<latitude>37.612989</latitude>
+			<altitude>0</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>816.0868214043837</range>
+			<altitudeMode>relativeToGround</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0ADB4203F93E8860709B</styleUrl>
+		<Point>
+			<extrude>1</extrude>
+			<coordinates>-8.810188999999999,37.612989,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark id="00DAC291C03E88612E8C">
+		<name>Marcador sem nome</name>
+		<LookAt>
+			<longitude>-8.806756546251622</longitude>
+			<latitude>37.61703461606474</latitude>
+			<altitude>75.1432603054124</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>1657.281051898026</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0ADB4203F93E8860709B</styleUrl>
+		<Point>
+			<coordinates>-8.810041931077942,37.61684246465217,70.30423842890639</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark id="026FE374C23E88618E60">
+		<name>Marcador sem nome</name>
+		<LookAt>
+			<longitude>-8.786710099475615</longitude>
+			<latitude>37.64514707487631</latitude>
+			<altitude>42.49649554861627</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>11898.56514317449</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0ADB4203F93E8860709B</styleUrl>
+		<Point>
+			<coordinates>-8.806743489379318,37.62490955928646,79.65161981085595</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark id="001273CB843E88619E30">
+		<name>Marcador sem nome</name>
+		<LookAt>
+			<longitude>-8.786710099475615</longitude>
+			<latitude>37.64514707487631</latitude>
+			<altitude>42.49649554861627</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>11898.56514317449</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0ADB4203F93E8860709B</styleUrl>
+		<Point>
+			<coordinates>-8.803995209521439,37.63528217044578,66.32239888006262</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark id="0DA7DE1A183E8861B6D8">
+		<name>Marcador sem nome</name>
+		<LookAt>
+			<longitude>-8.786710099475615</longitude>
+			<latitude>37.64514707487631</latitude>
+			<altitude>42.49649554861627</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>11898.56514317449</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0ADB4203F93E8860709B</styleUrl>
+		<Point>
+			<coordinates>-8.800782939370702,37.64641080250232,48.62006466896895</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark id="099C0F636D3E8861CB14">
+		<name>Marcador sem nome</name>
+		<LookAt>
+			<longitude>-8.786710099475615</longitude>
+			<latitude>37.64514707487631</latitude>
+			<altitude>42.49649554861627</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>11898.56514317449</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0ADB4203F93E8860709B</styleUrl>
+		<Point>
+			<coordinates>-8.797294296893032,37.65714591373089,17.17115926340137</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark id="05771DC8383E8861E3AE">
+		<name>Marcador sem nome</name>
+		<LookAt>
+			<longitude>-8.782628069894921</longitude>
+			<latitude>37.6721135378455</latitude>
+			<altitude>36.61269210986674</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>11904.44965752074</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0ADB4203F93E8860709B</styleUrl>
+		<Point>
+			<coordinates>-8.795150732038925,37.66625701621217,29.24179814974309</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark id="08CD2AF25E3E8861F07E">
+		<name>Marcador sem nome</name>
+		<LookAt>
+			<longitude>-8.782628069894921</longitude>
+			<latitude>37.6721135378455</latitude>
+			<altitude>36.61269210986674</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>11904.44965752074</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0ADB4203F93E8860709B</styleUrl>
+		<Point>
+			<coordinates>-8.792272332256591,37.67506739062037,34.07312590356281</coordinates>
+		</Point>
+	</Placemark>
+</Document>
+</kml>
