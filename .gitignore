@@ -1,3 +1,11 @@
-#Unreal Projects Path
-UnrealProjects/
+# Ignore all files
+*
+# Allow directories to be scanned
+!*/
 
+*env*/
+
+# Whitelist allowed extensions
+!*.py
+!*.txt
+!*.kml
