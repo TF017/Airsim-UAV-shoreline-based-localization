@@ -52,33 +52,43 @@ UAV Camera Image
 
 ---
 
-# 🗺️ Reference-Based Visual Localization
+🗺️ Reference-Based Visual Localization
 
-A complementary localization approach uses the **georeferenced aerial map directly as a global visual reference**.
+A complementary localization approach uses the georeferenced aerial map directly as a global visual reference.
 
-Given an RGB image acquired onboard the UAV, visual correspondences are established with a local region of the reference orthophoto. Because the orthophoto is georeferenced, the recovered camera pose can be expressed relative to the map reference frame, providing an absolute localization estimate.
+Given an RGB image acquired onboard the UAV, visual correspondences are established with a local region of the reference orthophoto. Because the orthophoto is georeferenced, the recovered camera pose can be expressed in the map reference frame, providing an absolute localization estimate.
 
-This is a **cross-view localization** problem: the UAV image and the reference orthophoto are captured from substantially different viewpoints and can exhibit significant differences in:
+This is a cross-view localization problem: the UAV image and the reference orthophoto are captured from substantially different viewpoints and can exhibit significant differences in:
 
-* viewpoint;
-* scale;
-* illumination;
-* image appearance;
-* scene representation.
+viewpoint;
+
+scale;
+
+illumination;
+
+image appearance;
+
+scene representation.
+
+Moreover, as the UAV moves farther away from the land and a larger portion of the ocean becomes visible in the onboard camera image, extracting and matching meaningful visual features becomes increasingly difficult. This can negatively affect the ability of SuperPoint and LightGlue to establish reliable correspondences, since ocean regions generally contain fewer stable and distinctive visual structures than land areas.
 
 The repository therefore includes a lightweight implementation based on learned local features and neural feature matching.
 
-### Feature Matching
+Feature Matching
 
 The implemented pipeline uses:
 
-* **SuperPoint** for local feature extraction;
-* **LightGlue** for feature matching;
-* geometric pose estimation;
-* a Digital Elevation Model (DEM) to associate image correspondences with three-dimensional world points;
-* **Perspective-n-Point (PnP)** optimization for camera pose recovery.
+SuperPoint for local feature extraction;
 
-The resulting pose provides an independent absolute localization estimate and can serve as an initialization or comparison against the shoreline-based approaches.
+LightGlue for feature matching;
+
+geometric pose estimation;
+
+a Digital Elevation Model (DEM) to associate image correspondences with three-dimensional world points;
+
+Perspective-n-Point (PnP) optimization for camera pose recovery.
+
+The resulting pose provides an independent absolute localization estimate and can serve as an initialization for the shoreline-based approaches.
 
 ---
 
@@ -137,8 +147,7 @@ The shoreline extracted from the UAV image is transformed from image coordinates
 The transformation uses the camera:
 
 * intrinsic parameters;
-* extrinsic parameters;
-* pose information;
+* extrinsic parameters.
 
 together with ray casting to obtain a metric representation of the observed shoreline.
 
@@ -163,8 +172,6 @@ The global method does not require a previous localization estimate and can ther
 The second strategy incorporates shoreline observations into a **particle filter**.
 
 Instead of searching the complete shoreline map for every camera frame, each particle represents a candidate UAV pose.
-
-For each particle, the corresponding nearby map shoreline is projected into the camera image using **inverse ray casting**.
 
 The predicted shoreline is then compared with the observed shoreline to calculate a measurement likelihood.
 
@@ -200,8 +207,7 @@ The particle filter combines:
 * temporal motion information;
 * shoreline observations;
 * map geometry;
-* inverse ray casting;
-* DEM information.
+* inverse ray casting.
 
 The output is the **absolute UAV position relative to the georeferenced reference map**.
 
@@ -305,6 +311,8 @@ The global shoreline localization method has been evaluated using:
 The segmentation study includes experiments comparing different water/land segmentation approaches.
 
 The evaluation includes both region-level and shoreline-specific metrics.
+
+![alt text](https://github.com/TF017/Airsim-UAV-shoreline-based-localization/blob/main/segmentation_results.png?raw=true)
 
 ### Particle Filter
 
