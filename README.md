@@ -1,407 +1,347 @@
 # Shoreline-Based Absolute Localization for UAVs in GNSS-Denied Coastal Areas
 
-**Master's Thesis — Electrical and Computer Engineering, Instituto Superior Técnico (IST)**
+**Master's Thesis — Electrical and Computer Engineering, Instituto Superior Técnico**
 
 **Author:** Tiago Ferreira
-**Degree:** Electrical and Computer Engineering
-**Institution:** Instituto Superior Técnico (IST)
 
 ---
 
 ## 📌 Overview
 
-This repository contains the simulation environment, perception methods, geometric localization algorithms, and experimental results developed as part of a Master's thesis on **absolute localization of Unmanned Aerial Vehicles (UAVs) in coastal environments where GNSS is unavailable or unreliable**.
+This repository contains the simulation environment, perception, visual localization, shoreline matching, and particle-filter localization methods developed as part of a Master's thesis investigating **absolute UAV localization in GNSS-denied coastal environments**.
 
-The main objective is to investigate whether **shoreline information can be used as a geometric reference for absolute UAV localization**.
+The central idea is to exploit **georeferenced aerial imagery and shoreline geometry as a global reference**.
 
-The proposed framework is developed in a simulated coastal environment using **AirSim, Unreal Engine, and Cesium**. The UAV is equipped with a camera and operates without relying on GNSS measurements for localization.
+Rather than relying exclusively on the appearance of the complete scene, the proposed localization framework extracts the boundary between water and land from the UAV image and uses this shoreline as a persistent geometric feature. Since the reference shoreline is georeferenced, matching it with an onboard observation allows the UAV position to be estimated relative to the global reference map.
 
-The work explores a localization pipeline based on:
+The system is developed and evaluated in a simulated coastal environment using **AirSim, Unreal Engine, and Cesium**.
 
-1. **Cross-view localization** for an initial position estimate.
-2. **Shoreline extraction and geometric matching** using camera ray casting, Procrustes analysis, and ICP.
-3. **Particle-filter localization** using inverse ray casting and Digital Elevation Model (DEM) information.
-4. **Water/land segmentation** as a perception component for extracting the shoreline from UAV imagery.
-
-A particular characteristic of the experimental setup is the **temporal separation between the reference and simulated imagery**. The georeferenced reference data is derived from a **2018 DGT orthophoto**, while the simulated imagery is generated using **2014 Bing Maps imagery provided through Cesium**. Consequently, the reference and observation data are not generated from the same image source or acquisition period.
-
-> **Status:** The particle-filter evaluation and final experimental analysis are currently ongoing. Results presented in this repository will be updated as the evaluation progresses.
-
----
-
-## 🎥 Demonstration
-
-The following video demonstrates the particle-filter localization framework operating in a simulated coastal environment.
-
-**Coming soon / YouTube link to be added**
-
-<!-- Replace the section below with the YouTube thumbnail once the video is uploaded.
-
-[![UAV Shoreline-Based Localization Demo](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID)
-
--->
-
----
-
-## 🧭 Research Pipeline
-
-The overall research framework can be summarized as:
+The complete framework consists of three main stages:
 
 ```text
-                    ┌─────────────────────────┐
-                    │  Georeferenced Coastal  │
-                    │     Reference Data       │
-                    │      DGT Orthophoto      │
-                    │          2018            │
-                    └────────────┬────────────┘
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │    Reference Shoreline  │
-                    └────────────┬────────────┘
-                                 │
-                                 │
-       ┌─────────────────────────┴──────────────────────────┐
-       │                                                    │
-       ▼                                                    ▼
-┌──────────────────┐                              ┌──────────────────┐
-│   AirSim UAV     │                              │ Cross-View       │
-│                  │                              │ Localization     │
-│ Unreal + Cesium  │                              │                  │
-│                  │                              │ Lightweight      │
-│ Camera           │                              │ implementation   │
-└────────┬─────────┘                              └────────┬─────────┘
-         │                                                │
-         ▼                                                │
-┌──────────────────┐                                      │
-│ UAV Camera Frame │                                      │
-└────────┬─────────┘                                      │
-         │                                                │
-         ▼                                                │
-┌──────────────────────────┐                              │
-│ Water/Land Segmentation  │                              │
-│                          │                              │
-│ SAM 3 / SegFormer-B2 /   │                              │
-│ other experiments        │                              │
-└────────────┬─────────────┘                              │
-             │                                            │
-             ▼                                            │
-┌──────────────────────────┐                              │
-│      Shoreline           │                              │
-│      Extraction          │                              │
-└────────────┬─────────────┘                              │
-             │                                            │
-             ▼                                            │
-┌──────────────────────────┐                              │
-│       Ray Casting        │                              │
-│                          │                              │
-│ Camera intrinsics +      │                              │
-│ camera extrinsics        │                              │
-└────────────┬─────────────┘                              │
-             │                                            │
-             ▼                                            │
-┌──────────────────────────┐                              │
-│ Metric Shoreline         │                              │
-│ Representation           │                              │
-└────────────┬─────────────┘                              │
-             │                                            │
-             ▼                                            │
-┌──────────────────────────┐                              │
-│ Procrustes + ICP         │◄─────────────────────────────┘
-│ Shoreline Matching       │
-└────────────┬─────────────┘
+UAV Camera Image
+       │
+       ▼
+┌─────────────────────────┐
+│ Water/Land Segmentation │
+│                         │
+│ SAM 3 / SegFormer-B2    │
+└────────────┬────────────┘
              │
              ▼
-┌──────────────────────────┐
-│    Particle Filter       │
-│                          │
-│    Inverse Ray Casting   │
-│    + DEM Information     │
-└────────────┬─────────────┘
+        Shoreline
              │
+       ┌─────┴──────┐
+       │            │
+       ▼            ▼
+ Global Shoreline   Sequential
+ Localization       Localization
+       │            │
+       ▼            ▼
+ Procrustes + ICP   Particle Filter
+       │            │
+       │       Inverse Ray Casting
+       │            |
+       │            |
+       │            │
+       └─────┬──────┘
              ▼
-┌──────────────────────────┐
-│ Absolute UAV Position    │
-│ Relative to Reference    │
-│ Map                      │
-└──────────────────────────┘
+    Absolute UAV Position
+       Relative to Map
 ```
 
 ---
 
-# 🌊 Simulation Environment
+# 🗺️ Reference-Based Visual Localization
 
-The experimental environment is based on a combination of:
+A complementary localization approach uses the **georeferenced aerial map directly as a global visual reference**.
 
-* **AirSim** — UAV simulation and sensor acquisition.
-* **Unreal Engine** — simulation environment and scene control.
-* **Cesium** — geospatial environment and terrain/imagery integration.
+Given an RGB image acquired onboard the UAV, visual correspondences are established with a local region of the reference orthophoto. Because the orthophoto is georeferenced, the recovered camera pose can be expressed relative to the map reference frame, providing an absolute localization estimate.
 
-The UAV is equipped with a simulated camera. The camera is currently modeled without measurement noise.
+This is a **cross-view localization** problem: the UAV image and the reference orthophoto are captured from substantially different viewpoints and can exhibit significant differences in:
 
-The simulation uses **2014 Bing Maps imagery provided through Cesium**, while the external reference used for localization is based on a **2018 DGT orthophoto**.
+* viewpoint;
+* scale;
+* illumination;
+* image appearance;
+* scene representation.
 
-This temporal separation is maintained throughout the localization experiments and introduces differences between the simulated observation and the georeferenced reference data.
+The repository therefore includes a lightweight implementation based on learned local features and neural feature matching.
 
-### Coordinate Frame
+### Feature Matching
 
-The localization framework currently operates using a **local simulation coordinate frame**.
+The implemented pipeline uses:
 
-Utilities for coordinate conversion are also included in the repository where required by the simulation and geospatial data-processing pipeline.
+* **SuperPoint** for local feature extraction;
+* **LightGlue** for feature matching;
+* geometric pose estimation;
+* a Digital Elevation Model (DEM) to associate image correspondences with three-dimensional world points;
+* **Perspective-n-Point (PnP)** optimization for camera pose recovery.
 
----
-
-# 📍 Localization Framework
-
-## 1. Lightweight Cross-View Localization
-
-A lightweight cross-view localization module was developed as an initial approach for obtaining an approximate UAV location from visual information.
-
-The module provides an initial investigation into matching the simulated UAV view with georeferenced coastal reference imagery.
-
-This implementation is intentionally lightweight and serves primarily as one component of the broader localization framework.
-
-Experimental results for this module are included in the repository.
+The resulting pose provides an independent absolute localization estimate and can serve as an initialization or comparison against the shoreline-based approaches.
 
 ---
 
-## 2. Shoreline-Based Geometric Matching
+# 🌊 Shoreline-Based Localization
 
-The main geometric localization approach uses the shoreline as a spatial feature.
+The main focus of the work is to use the **shoreline as a geometric environmental feature** rather than attempting to match complete image appearance.
 
-### Shoreline Observation
+The boundary between land and water provides a large-scale feature that can be represented both:
 
-The UAV camera frame is processed to obtain the shoreline separating **water and land**.
+* in the UAV observation; and
+* in a georeferenced coastal map.
 
-The observed shoreline is then transformed from image coordinates into metric coordinates using the camera model.
+This representation is particularly relevant to coastal navigation because the shoreline geometry can provide positional information even when GNSS is unavailable.
 
-The transformation uses:
+The shoreline localization framework consists of **two complementary strategies**.
 
-* Camera intrinsic parameters
-* Camera extrinsic parameters
-* Camera pose
-* Ray casting
+---
 
-The resulting shoreline is represented in a metric coordinate system and can subsequently be compared with the georeferenced reference shoreline.
+## 1. Global Shoreline Localization
+
+The first strategy estimates the UAV position from a **single shoreline observation**.
+
+The complete reference shoreline is searched for candidate segments that could correspond to the shoreline observed by the UAV.
+
+The localization process follows a coarse-to-fine registration strategy:
+
+```text
+Observed UAV Shoreline
+          │
+          ▼
+    Ray Casting
+          │
+          ▼
+Metric Shoreline
+          │
+          ▼
+ Candidate Reference Segments
+          │
+          ▼
+ Procrustes Alignment
+          │
+          ▼
+ Promising Candidates
+          │
+          ▼
+      ICP Refinement
+          │
+          ▼
+ Estimated UAV Position
+```
+
+### Ray Casting
+
+The shoreline extracted from the UAV image is transformed from image coordinates into metric coordinates using the camera model.
+
+The transformation uses the camera:
+
+* intrinsic parameters;
+* extrinsic parameters;
+* pose information;
+
+together with ray casting to obtain a metric representation of the observed shoreline.
 
 ### Procrustes Alignment
 
-The reconstructed shoreline is aligned with the reference shoreline using **Procrustes analysis**.
+Rigid Procrustes alignment provides a coarse geometric registration between the observed shoreline and candidate reference shoreline segments.
 
-This provides a geometric alignment between the observed and reference shoreline representations.
+This stage is used to identify promising candidate locations efficiently.
 
 ### ICP Refinement
 
-The alignment can subsequently be refined using **Iterative Closest Point (ICP)**.
+The best candidate alignments are refined using **Iterative Closest Point (ICP)**.
 
-The combination of Procrustes alignment and ICP is used to investigate geometric correspondence between the shoreline observed by the UAV and the reference shoreline extracted from the georeferenced map.
+The combination of Procrustes alignment and ICP provides a coarse-to-fine geometric registration approach for single-observation shoreline localization.
 
----
-
-# 🎯 Particle-Filter Localization
-
-The particle-filter approach extends the geometric shoreline concept into a probabilistic localization framework.
-
-Each particle represents a candidate UAV position in the local simulation frame.
-
-For each candidate position, the expected shoreline observation is generated using **inverse ray casting**.
-
-The predicted observation is then compared against the shoreline observed by the UAV.
-
-Conceptually:
-
-```text
-                 Candidate UAV Position
-                          │
-                          ▼
-                  ┌───────────────┐
-                  │ Inverse Ray   │
-                  │    Casting    │
-                  └───────┬───────┘
-                          │
-                          ▼
-                 Predicted Shoreline
-                          │
-                          │ comparison
-                          ▼
-Observed Shoreline ──► Likelihood
-                          │
-                          ▼
-                    Particle Weight
-                          │
-                          ▼
-                  Resampling / Update
-                          │
-                          ▼
-                 Estimated UAV Position
-```
-
-The output of the particle filter is the **absolute UAV position relative to the georeferenced reference map**.
+The global method does not require a previous localization estimate and can therefore provide an **absolute initialization**.
 
 ---
 
-## ⛰️ DEM-Aware Shoreline Modeling
+# 🧭 2. Sequential Shoreline Localization with a Particle Filter
 
-A Digital Elevation Model (DEM) is incorporated into the particle-filter formulation to account for the elevation of the shoreline.
+The second strategy incorporates shoreline observations into a **particle filter**.
 
-A simplified assumption that the shoreline always lies at:
+Instead of searching the complete shoreline map for every camera frame, each particle represents a candidate UAV pose.
 
-```text
-z = 0
-```
+For each particle, the corresponding nearby map shoreline is projected into the camera image using **inverse ray casting**.
 
-is not generally valid in coastal environments.
-
-For example, a shoreline may occur at an elevation of approximately:
+The predicted shoreline is then compared with the observed shoreline to calculate a measurement likelihood.
 
 ```text
-z = 5 m
+                 Particle Set
+                     │
+                     ▼
+             Candidate UAV Poses
+                     │
+                     ▼
+              Inverse Ray Casting
+                     │
+                     ▼
+           Predicted Image Shoreline
+                     │
+                     │
+                     ▼
+Observed Shoreline ────────► Measurement
+                              Likelihood
+                                  │
+                                  ▼
+                         Particle Weights
+                                  │
+                                  ▼
+                             Resampling
+                                  │
+                                  ▼
+                       Estimated UAV Position
 ```
 
-depending on the local terrain.
+The particle filter combines:
 
-This elevation affects the intersection between camera rays and the terrain and therefore influences the predicted shoreline observed from a candidate UAV pose.
+* temporal motion information;
+* shoreline observations;
+* map geometry;
+* inverse ray casting;
+* DEM information.
 
-The DEM is consequently used to make the inverse-ray-casting prediction more representative of the simulated environment.
-
----
-
-# 🛰️ Reference and Observation Data
-
-An important characteristic of this work is the use of temporally separated imagery.
-
-| Dataset              | Source             | Year | Role                       |
-| -------------------- | ------------------ | ---: | -------------------------- |
-| Reference orthophoto | DGT                | 2018 | Georeferenced reference    |
-| Simulated imagery    | Bing Maps / Cesium | 2014 | UAV simulation environment |
-
-The reference and simulated imagery therefore differ in acquisition time and source.
-
-This creates a more challenging matching problem than directly comparing imagery generated from the same map source.
-
-The temporal difference is maintained across the different localization experiments.
+The output is the **absolute UAV position relative to the georeferenced reference map**.
 
 ---
 
 # 🖼️ Water/Land Segmentation
 
-A separate component of the project investigates automatic extraction of the shoreline from UAV imagery.
+Shoreline localization depends on obtaining a reliable shoreline observation from the UAV camera.
 
-The segmentation problem is formulated as a **water-versus-land segmentation task**, with the shoreline represented by the boundary between the two classes.
+The perception front-end formulates this as a **water-versus-land segmentation problem**, where the shoreline is represented by the boundary between the two classes.
 
-A small custom dataset was created for this purpose.
-
-The repository contains experiments involving the fine-tuning and evaluation of segmentation models, including:
+A custom dataset was created for this purpose and used to investigate several segmentation approaches, including:
 
 * **SAM 3**
 * **SegFormer-B2**
-* Other segmentation experiments
+* **SegFormer-B5**
+* **U-Net**
+* **DeepLabv3+**
+* zero-shot baselines.
 
-The resulting segmentation masks can be used as input to the shoreline extraction and localization pipeline.
+The segmentation experiments use a leakage-free **leave-location-out evaluation protocol**.
 
-### Segmentation Pipeline
+The results indicate that segmentation quality should not be assessed solely using region-overlap metrics. Since the segmentation output is ultimately used to estimate a shoreline for geometric localization, **boundary-level and metric shoreline errors** are particularly relevant.
 
-```text
-UAV Image
-    │
-    ▼
-Water / Land Segmentation
-    │
-    ▼
-Water Mask + Land Mask
-    │
-    ▼
-Water/Land Boundary
-    │
-    ▼
-Shoreline
-    │
-    ▼
-Geometric Localization
-```
+The evaluation therefore considers metrics that better capture shoreline alignment, including:
 
-Segmentation results are included separately from the localization results because segmentation represents a perception component of the overall system.
+* region overlap;
+* Boundary F-score;
+* strict Boundary IoU;
+* metre-scale shoreline error.
+
+The segmentation experiments provide the perception component required by the subsequent shoreline localization methods.
+
+---
+
+# 🔬 Research Components
+
+The repository therefore contains several interconnected research components:
+
+| Component               | Purpose                                                                  |
+| ----------------------- | ------------------------------------------------------------------------ |
+| Cross-view localization | Absolute visual localization from UAV image and georeferenced orthophoto |
+| SuperPoint + LightGlue  | Local feature extraction and cross-view matching                         |
+| DTM/DEM integration     | Associate visual/map information with terrain elevation                  |
+| Water/land segmentation | Extract shoreline from UAV imagery                                       |
+| Ray casting             | Convert image shoreline into metric coordinates                          |
+| Procrustes alignment    | Coarse shoreline registration                                            |
+| ICP                     | Fine shoreline registration                                              |
+| Particle filter         | Sequential shoreline-based localization                                  |
+| Inverse ray casting     | Predict shoreline observations for candidate poses                       |
+| DEM-aware modeling      | Account for non-zero shoreline elevation                                 |
+| AirSim/Unreal/Cesium    | Simulated coastal UAV environment                                        |
+
+---
+
+# 🛰️ Experimental Environment
+
+The simulation environment combines:
+
+* **AirSim** for UAV simulation and sensor acquisition;
+* **Unreal Engine** for the simulated environment;
+* **Cesium** for geospatial terrain and imagery.
+
+The UAV is equipped with a camera, with the current simulation using an idealized camera model without measurement noise.
+
+### Temporal Separation of Reference and Simulation Data
+
+An important characteristic of the experimental setup is that the reference and simulated imagery are **temporally separated**.
+
+| Data                 | Source             | Year | Role                    |
+| -------------------- | ------------------ | ---: | ----------------------- |
+| Reference orthophoto | DGT                | 2018 | Georeferenced reference |
+| Simulated imagery    | Bing Maps / Cesium | 2014 | Simulation environment  |
+
+The localization framework therefore does not rely on matching imagery generated from exactly the same source and acquisition period.
+
+This temporal separation is maintained across the localization experiments and represents an additional source of appearance and geometric discrepancy between the UAV observations and the reference data.
 
 ---
 
 # 📊 Results
 
-Experimental results are currently available for several components of the project.
+Results are currently available for several components of the system.
 
-## Cross-View Localization
+### Cross-View Localization
 
-Results for the lightweight cross-view localization module are available and are being used to characterize its behavior within the simulated environment.
+The lightweight cross-view localization module has been implemented and evaluated.
 
-**Results:** `results/` — to be documented/linked here.
+Results include experiments using the visual matching and pose-estimation pipeline.
 
----
+### Shoreline Matching
 
-## Shoreline Matching
+The global shoreline localization method has been evaluated using:
 
-Experiments have been conducted using:
+* ray-cast shoreline reconstruction;
+* Procrustes alignment;
+* ICP refinement.
 
-* Ray-cast shoreline reconstruction
-* Procrustes alignment
-* ICP refinement
+### Segmentation
 
-These experiments provide an evaluation of the geometric shoreline-matching approach.
+The segmentation study includes experiments comparing different water/land segmentation approaches.
 
-**Results:** `results/` — to be documented/linked here.
+The evaluation includes both region-level and shoreline-specific metrics.
 
----
+### Particle Filter
 
-## Segmentation
+The particle-filter localization framework has been implemented and is currently undergoing further evaluation.
 
-Segmentation experiments have been conducted using the custom dataset and different model configurations, including SAM 3 and SegFormer-B2.
+The final experiments will investigate localization performance under the simulated coastal GNSS-denied scenario.
 
-Results can include metrics and qualitative examples such as:
+> **Status:** Particle-filter evaluation ongoing.
 
-* Segmentation accuracy
-* Intersection over Union (IoU)
-* Boundary quality
-* Qualitative segmentation examples
-
-**Results:** `results/segmentation/`
-
----
-
-## Particle Filter
-
-The particle-filter localization framework is currently under evaluation.
-
-The final evaluation will investigate the behavior of the proposed method under the simulated coastal GNSS-denied scenario and will be added to this repository as the experiments are completed.
-
-**Status:** 🚧 Evaluation in progress
+Quantitative results, figures, trajectories, and comparisons will be added as the experimental evaluation is finalized.
 
 ---
 
 # 📁 Repository Structure
 
-The current repository is organized around the different components developed during the thesis:
-
 ```text
 .
 ├── Controller/
-│   └── Python files for controlling the AirSim simulation
+│   └── Python scripts for controlling AirSim
 │       and acquiring/saving UAV images
 │
 ├── Coordinates/
-│   └── Coordinate-system conversion utilities
+│   └── Coordinate conversion utilities
 │
 ├── LightGlue/
-│   └── Lightweight cross-view localization module
+│   └── Lightweight cross-view localization
 │
 ├── MDTmerger/
-│   └── Tools for merging/preparing DTM data
+│   └── Tools for preparing/merging DTM data
 │       for integration with Cesium
 │
 ├── Unreal/
-│   └── Utilities for controlling/configuring
-│       the Unreal Engine simulation
+│   └── Unreal Engine simulation utilities
 │
 ├── Water Segmentation/
 │   └── Water/land segmentation experiments,
-│       model fine-tuning and related code
+│       dataset processing and model fine-tuning
 │
 ├── results/
 │   └── Experimental results
@@ -409,7 +349,7 @@ The current repository is organized around the different components developed du
 └── README.md
 ```
 
-> The repository structure is evolving as the thesis work progresses.
+The repository structure is still evolving as the thesis work is consolidated.
 
 ---
 
@@ -417,98 +357,36 @@ The current repository is organized around the different components developed du
 
 The project is primarily implemented in **Python**.
 
-Because several components depend on external simulation and geospatial software, installation requirements vary between modules.
+Several components additionally depend on AirSim, Unreal Engine, Cesium, geospatial data, and machine-learning frameworks.
 
-At a minimum, the Python environment should be configured according to the requirements of the specific module being used.
-
-A consolidated `requirements.txt` will be provided once the software dependencies are finalized.
-
-### Python
+Installation instructions and dependency specifications will be consolidated as the repository is prepared for release.
 
 ```bash
 git clone <REPOSITORY_URL>
 cd <REPOSITORY_NAME>
-```
 
-Create and activate a virtual environment:
-
-```bash
 python -m venv .venv
 ```
 
-On Linux/macOS:
-
-```bash
-source .venv/bin/activate
-```
-
-On Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-Install the required Python packages:
+Activate the virtual environment and install the required dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-> Installation instructions are currently being finalized as the different experimental components are consolidated.
+> The exact dependencies may differ between the simulation, segmentation, cross-view localization, and shoreline-localization components.
 
 ---
 
-# 🚀 Running the Simulation
+# 🚀 Demonstration
 
-The AirSim simulation is controlled through Python scripts located in the `Controller/` directory.
+A demonstration of the particle-filter localization framework is available below.
 
-The general workflow is:
+<!-- Replace YOUTUBE_VIDEO_ID after uploading the demonstration -->
 
-```text
-Unreal Engine
-      │
-      ▼
-Cesium Coastal Environment
-      │
-      ▼
-AirSim
-      │
-      ▼
-Simulated UAV
-      │
-      ▼
-Camera Images
-      │
-      ▼
-Localization / Segmentation Pipeline
-```
+[![Shoreline-Based UAV Localization Demo](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID)
 
-The controller scripts can be used to initialize the UAV simulation and acquire camera images for subsequent processing.
-
-Detailed execution instructions will be added as the simulation setup is finalized.
-
----
-
-# 🧪 Experimental Setup
-
-The experimental framework uses:
-
-| Component                | Configuration                                   |
-| ------------------------ | ----------------------------------------------- |
-| Simulator                | AirSim                                          |
-| Game Engine              | Unreal Engine                                   |
-| Geospatial framework     | Cesium                                          |
-| UAV sensor               | Camera                                          |
-| Camera noise             | None                                            |
-| Reference data           | DGT orthophoto                                  |
-| Reference year           | 2018                                            |
-| Simulated imagery        | Bing Maps via Cesium                            |
-| Simulated imagery year   | 2014                                            |
-| Coordinate frame         | Local simulation frame                          |
-| Localization output      | Absolute UAV position relative to reference map |
-| Shoreline representation | Metric coordinates                              |
-| Particle filter          | DEM-aware                                       |
-| Shoreline prediction     | Inverse ray casting                             |
+The demonstration shows the particle filter operating in a simulated coastal environment and estimating the UAV's absolute position using shoreline observations.
 
 ---
 
@@ -529,7 +407,7 @@ Instituto Superior Técnico (IST)
 **Department:**
 Electrical and Computer Engineering
 
-**Supervisors:**
+**Supervisor(s):**
 *To be added*
 
 **Academic Year:**
@@ -539,45 +417,32 @@ Electrical and Computer Engineering
 
 # 📄 Thesis
 
-The final thesis document will be made available here once it is ready.
+The final thesis document will be linked here once it is available.
 
-```text
-[Thesis PDF — coming soon]
-```
+> **Thesis PDF:** Coming soon
 
 ---
 
 # 📚 Publications
 
-Publications and related academic work will be listed here if applicable.
-
-```text
-[Publications — to be added]
-```
+Publications and related academic work will be added here if applicable.
 
 ---
 
-# 🔗 Related Resources
+# ⚠️ Data, Imagery and Model Dependencies
 
-* AirSim simulation framework
-* Unreal Engine
-* Cesium
-* DGT geospatial data
-* Segmentation model resources
+This project makes use of third-party resources, including geospatial imagery, terrain data, simulation assets, and machine-learning models.
 
-Specific links and dataset references will be added as the repository is finalized.
+In particular:
 
----
+* The reference data includes a DGT orthophoto.
+* The simulation uses Bing Maps imagery provided through Cesium.
+* The segmentation experiments use pretrained model architectures and weights.
+* Additional terrain and elevation data may be required for reproducing the experiments.
 
-# ⚠️ Data and Model Availability
+The redistribution of these resources may be subject to their respective licenses and terms of use.
 
-Some components of this project rely on third-party imagery, geospatial data, simulation assets, and pretrained models.
-
-The availability and redistribution of these resources may be subject to their respective licenses and terms of use.
-
-The repository therefore does not necessarily redistribute all external datasets or assets used during the experiments.
-
-Instructions for obtaining required external resources will be provided where appropriate.
+This repository therefore focuses primarily on the research code and experimental methodology. Instructions for obtaining external resources will be provided where appropriate.
 
 ---
 
@@ -585,9 +450,32 @@ Instructions for obtaining required external resources will be provided where ap
 
 **License: To be determined**
 
-The repository is currently maintained as part of an ongoing Master's thesis project.
+This repository is currently maintained as part of an ongoing Master's thesis.
 
-A license will be added once the distribution status of the source code, datasets, simulation assets, and third-party dependencies has been established.
+The final license will be selected after considering the licensing requirements of the source code, datasets, imagery, simulation assets, pretrained models, and other third-party dependencies.
+
+---
+
+# 🚧 Project Status
+
+| Component                            | Status        |
+| ------------------------------------ | ------------- |
+| AirSim + Unreal + Cesium environment | ✅ Implemented |
+| UAV camera simulation                | ✅ Implemented |
+| Cross-view localization              | ✅ Implemented |
+| SuperPoint + LightGlue pipeline      | ✅ Implemented |
+| Water/land segmentation              | ✅ Evaluated   |
+| Custom segmentation dataset          | ✅ Created     |
+| Shoreline ray casting                | ✅ Implemented |
+| Procrustes shoreline matching        | ✅ Implemented |
+| ICP refinement                       | ✅ Implemented |
+| Particle-filter localization         | ✅ Implemented |
+| Inverse ray casting                  | ✅ Implemented |
+| DEM-aware shoreline modeling         | ✅ Implemented |
+| Final particle-filter evaluation     | 🚧 Ongoing    |
+| Final comparative analysis           | 🚧 Ongoing    |
+| Thesis documentation                 | 🚧 Ongoing    |
+| Repository release preparation       | 🚧 Ongoing    |
 
 ---
 
@@ -596,34 +484,3 @@ A license will be added once the distribution status of the source code, dataset
 **Tiago Ferreira**
 Master's Student in Electrical and Computer Engineering
 Instituto Superior Técnico
-
----
-
-## 🚧 Project Status
-
-This repository represents ongoing Master's thesis research.
-
-Current development includes:
-
-* [x] AirSim/Unreal/Cesium simulation environment
-* [x] Camera-based UAV observation
-* [x] Lightweight cross-view localization
-* [x] Shoreline reconstruction through ray casting
-* [x] Procrustes shoreline alignment
-* [x] ICP shoreline refinement
-* [x] DEM-aware inverse ray-casting framework
-* [x] Particle-filter localization framework
-* [x] Custom water/land segmentation dataset
-* [x] Segmentation model experiments
-* [ ] Complete particle-filter evaluation
-* [ ] Final quantitative comparison
-* [ ] Final thesis documentation
-* [ ] Repository cleanup and reproducibility instructions
-
----
-
-## 🙏 Acknowledgements
-
-This work was developed as part of a Master's thesis in Electrical and Computer Engineering at Instituto Superior Técnico.
-
-Additional acknowledgements and supervisor information will be added to the final version of this repository.
