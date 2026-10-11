@@ -60,15 +60,15 @@ Given an RGB image acquired onboard the UAV, visual correspondences are establis
 
 This is a cross-view localization problem: the UAV image and the reference orthophoto are captured from substantially different viewpoints and can exhibit significant differences in:
 
-viewpoint;
+* viewpoint;
 
-scale;
+* scale;
 
-illumination;
+* illumination;
 
-image appearance;
+* image appearance;
 
-scene representation.
+* scene representation.
 
 Moreover, as the UAV moves farther away from the land and a larger portion of the ocean becomes visible in the onboard camera image, extracting and matching meaningful visual features becomes increasingly difficult. This can negatively affect the ability of SuperPoint and LightGlue to establish reliable correspondences, since ocean regions generally contain fewer stable and distinctive visual structures than land areas.
 
@@ -78,15 +78,15 @@ Feature Matching
 
 The implemented pipeline uses:
 
-SuperPoint for local feature extraction;
+* SuperPoint for local feature extraction;
 
-LightGlue for feature matching;
+* LightGlue for feature matching;
 
-geometric pose estimation;
+* geometric pose estimation;
 
-a Digital Elevation Model (DEM) to associate image correspondences with three-dimensional world points;
+* a Digital Elevation Model (DEM) to associate image correspondences with three-dimensional world points;
 
-Perspective-n-Point (PnP) optimization for camera pose recovery.
+* Perspective-n-Point (PnP) optimization for camera pose recovery.
 
 The resulting pose provides an independent absolute localization estimate and can serve as an initialization for the shoreline-based approaches.
 
@@ -324,6 +324,7 @@ The final experiments will investigate localization performance under the simula
 
 Quantitative results, figures, trajectories, and comparisons will be added as the experimental evaluation is finalized.
 
+<!-- 
 ---
 
 # 📁 Repository Structure
@@ -385,14 +386,14 @@ pip install -r requirements.txt
 > The exact dependencies may differ between the simulation, segmentation, cross-view localization, and shoreline-localization components.
 
 ---
-
+-->
 # 🚀 Demonstration
 
 A demonstration of the particle-filter localization framework is available below.
 
 <!-- Replace YOUTUBE_VIDEO_ID after uploading the demonstration -->
 
-[![Shoreline-Based UAV Localization Demo](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID)
+[![Shoreline-Based UAV Localization Demo](https://img.youtube.com/vi/qzDkh_uzslQ/0.jpg)](https://www.youtube.com/watch?v=qzDkh_uzslQ)
 
 The demonstration shows the particle filter operating in a simulated coastal environment and estimating the UAV's absolute position using shoreline observations.
 
