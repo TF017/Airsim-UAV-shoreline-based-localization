@@ -8,7 +8,7 @@
 
 ## 📌 Overview
 
-This repository contains the simulation environment, perception, visual localization, shoreline matching, and particle-filter localization methods developed as part of a Master's thesis investigating **absolute UAV localization in GNSS-denied coastal environments**.
+This repository contains the perception, visual localization, shoreline matching, and particle-filter localization methods developed as part of a Master's thesis investigating **absolute UAV localization in GNSS-denied coastal environments**.
 
 The central idea is to exploit **georeferenced aerial imagery and shoreline geometry as a global reference**.
 
@@ -147,7 +147,7 @@ The shoreline extracted from the UAV image is transformed from image coordinates
 The transformation uses the camera:
 
 * intrinsic parameters;
-* extrinsic parameters.
+* extrinsic parameters(Orientation and altitude).
 
 together with ray casting to obtain a metric representation of the observed shoreline.
 
@@ -286,107 +286,6 @@ The localization framework therefore does not rely on matching imagery generated
 
 This temporal separation is maintained across the localization experiments and represents an additional source of appearance and geometric discrepancy between the UAV observations and the reference data.
 
----
-
-# 📊 Results
-
-Results are currently available for several components of the system.
-
-### Cross-View Localization
-
-The lightweight cross-view localization module has been implemented and evaluated.
-
-Results include experiments using the visual matching and pose-estimation pipeline.
-
-### Shoreline Matching
-
-The global shoreline localization method has been evaluated using:
-
-* ray-cast shoreline reconstruction;
-* Procrustes alignment;
-* ICP refinement.
-
-### Segmentation
-
-The segmentation study includes experiments comparing different water/land segmentation approaches.
-
-The evaluation includes both region-level and shoreline-specific metrics.
-
-![alt text](https://github.com/TF017/Airsim-UAV-shoreline-based-localization/blob/main/segmentation_results.png?raw=true)
-
-### Particle Filter
-
-The particle-filter localization framework has been implemented and is currently undergoing further evaluation.
-
-The final experiments will investigate localization performance under the simulated coastal GNSS-denied scenario.
-
-> **Status:** Particle-filter evaluation ongoing.
-
-Quantitative results, figures, trajectories, and comparisons will be added as the experimental evaluation is finalized.
-
-<!-- 
----
-
-# 📁 Repository Structure
-
-```text
-.
-├── Controller/
-│   └── Python scripts for controlling AirSim
-│       and acquiring/saving UAV images
-│
-├── Coordinates/
-│   └── Coordinate conversion utilities
-│
-├── LightGlue/
-│   └── Lightweight cross-view localization
-│
-├── MDTmerger/
-│   └── Tools for preparing/merging DTM data
-│       for integration with Cesium
-│
-├── Unreal/
-│   └── Unreal Engine simulation utilities
-│
-├── Water Segmentation/
-│   └── Water/land segmentation experiments,
-│       dataset processing and model fine-tuning
-│
-├── results/
-│   └── Experimental results
-│
-└── README.md
-```
-
-The repository structure is still evolving as the thesis work is consolidated.
-
----
-
-# ⚙️ Installation
-
-The project is primarily implemented in **Python**.
-
-Several components additionally depend on AirSim, Unreal Engine, Cesium, geospatial data, and machine-learning frameworks.
-
-Installation instructions and dependency specifications will be consolidated as the repository is prepared for release.
-
-```bash
-git clone <REPOSITORY_URL>
-cd <REPOSITORY_NAME>
-
-python -m venv .venv
-```
-
-Activate the virtual environment and install the required dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-> The exact dependencies may differ between the simulation, segmentation, cross-view localization, and shoreline-localization components.
-
----
--->
 # 🚀 Demonstration
 
 A demonstration of the particle-filter localization framework is available below.
@@ -399,97 +298,5 @@ The demonstration shows the particle filter operating in a simulated coastal env
 
 ---
 
-# 🎓 Thesis Information
-
-**Title:**
-*Shoreline-Based Absolute Localization for UAVs in GNSS-Denied Coastal Areas*
-
-**Author:**
-Tiago Ferreira
-
-**Degree:**
-Master's Degree in Electrical and Computer Engineering
-
-**Institution:**
-Instituto Superior Técnico (IST)
-
-**Department:**
-Electrical and Computer Engineering
-
-**Supervisor(s):**
-*To be added*
-
-**Academic Year:**
-*To be added*
-
----
-
-# 📄 Thesis
-
-The final thesis document will be linked here once it is available.
-
-> **Thesis PDF:** Coming soon
-
----
-
-# 📚 Publications
-
-Publications and related academic work will be added here if applicable.
-
----
-
-# ⚠️ Data, Imagery and Model Dependencies
-
-This project makes use of third-party resources, including geospatial imagery, terrain data, simulation assets, and machine-learning models.
-
-In particular:
-
-* The reference data includes a DGT orthophoto.
-* The simulation uses Bing Maps imagery provided through Cesium.
-* The segmentation experiments use pretrained model architectures and weights.
-* Additional terrain and elevation data may be required for reproducing the experiments.
-
-The redistribution of these resources may be subject to their respective licenses and terms of use.
-
-This repository therefore focuses primarily on the research code and experimental methodology. Instructions for obtaining external resources will be provided where appropriate.
-
----
-
-# 📜 License
-
-**License: To be determined**
-
-This repository is currently maintained as part of an ongoing Master's thesis.
-
-The final license will be selected after considering the licensing requirements of the source code, datasets, imagery, simulation assets, pretrained models, and other third-party dependencies.
-
----
-
-# 🚧 Project Status
-
-| Component                            | Status        |
-| ------------------------------------ | ------------- |
-| AirSim + Unreal + Cesium environment | ✅ Implemented |
-| UAV camera simulation                | ✅ Implemented |
-| Cross-view localization              | ✅ Implemented |
-| SuperPoint + LightGlue pipeline      | ✅ Implemented |
-| Water/land segmentation              | ✅ Evaluated   |
-| Custom segmentation dataset          | ✅ Created     |
-| Shoreline ray casting                | ✅ Implemented |
-| Procrustes shoreline matching        | ✅ Implemented |
-| ICP refinement                       | ✅ Implemented |
-| Particle-filter localization         | ✅ Implemented |
-| Inverse ray casting                  | ✅ Implemented |
-| DEM-aware shoreline modeling         | ✅ Implemented |
-| Final particle-filter evaluation     | 🚧 Ongoing    |
-| Final comparative analysis           | 🚧 Ongoing    |
-| Thesis documentation                 | 🚧 Ongoing    |
-| Repository release preparation       | 🚧 Ongoing    |
-
----
-
-# 👤 Author
-
-**Tiago Ferreira**
 Master's Student in Electrical and Computer Engineering
 Instituto Superior Técnico
