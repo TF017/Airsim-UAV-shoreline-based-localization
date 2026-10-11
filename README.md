@@ -295,8 +295,3 @@ A demonstration of the particle-filter localization framework is available below
 [![Shoreline-Based UAV Localization Demo](https://img.youtube.com/vi/qzDkh_uzslQ/0.jpg)](https://www.youtube.com/watch?v=qzDkh_uzslQ)
 
 The demonstration shows the particle filter operating in a simulated coastal environment and estimating the UAV's absolute position using shoreline observations.
-
----
-
-Master's Student in Electrical and Computer Engineering
-Instituto Superior Técnico
